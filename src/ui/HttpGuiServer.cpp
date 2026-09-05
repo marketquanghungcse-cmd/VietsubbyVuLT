@@ -458,9 +458,53 @@ void HttpGuiServer::handleClient(uintptr_t client_socket) {
 
         if (path == "/api/douyin/login" && method == "POST") {
             std::thread([]() {
-                ProcessRunner::execute("python scripts/douyin_login.py");
+                ProcessRunner::executeVisible("dang_nhap_douyin.bat");
             }).detach();
             sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đã mở cửa sổ đăng nhập Douyin trên máy tính\"}");
+            return;
+        }
+
+        if (path == "/api/douyin/save_cookies" && method == "POST") {
+            try {
+                nlohmann::json j = nlohmann::json::parse(body);
+                std::string raw = j.value("cookies", "");
+                if (raw.empty()) {
+                    sendResponse(400, "application/json", "{\"success\": false, \"message\": \"Nội dung cookie rỗng!\"}");
+                    return;
+                }
+
+                std::filesystem::create_directories("config");
+                std::filesystem::create_directories("temp");
+
+                try {
+                    auto test_json = nlohmann::json::parse(raw);
+                    if (test_json.is_array() || test_json.is_object()) {
+                        std::ofstream f1("config/douyin_cookies.json");
+                        f1 << test_json.dump(2);
+                        std::ofstream f2("temp/douyin_cookies.json");
+                        f2 << test_json.dump(2);
+                    }
+                } catch (...) {}
+
+                std::ofstream f_txt1("config/douyin_cookies.txt");
+                f_txt1 << raw;
+                std::ofstream f_txt2("temp/douyin_cookies.txt");
+                f_txt2 << raw;
+
+                sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đã lưu cookie thành công!\"}");
+                return;
+            } catch (const std::exception& ex) {
+                sendResponse(500, "application/json", std::string("{\"success\": false, \"message\": \"") + ex.what() + "\"}");
+                return;
+            }
+        }
+
+        if (path == "/api/douyin/logout" && method == "POST") {
+            std::filesystem::remove("config/douyin_cookies.json");
+            std::filesystem::remove("config/douyin_cookies.txt");
+            std::filesystem::remove("temp/douyin_cookies.json");
+            std::filesystem::remove("temp/douyin_cookies.txt");
+            sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đã xóa cookie Douyin\"}");
             return;
         }
 

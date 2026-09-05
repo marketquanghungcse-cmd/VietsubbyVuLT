@@ -16,6 +16,10 @@ public:
     static HANDLE launchProcess(const std::string& command_line);
     static int waitProcess(HANDLE hProcess);
     static std::vector<int> waitAll(std::vector<HANDLE>& handles);
+
+    // Interactive / GUI visible process execution
+    static HANDLE launchVisibleProcess(const std::string& command_line);
+    static int executeVisible(const std::string& command_line);
 };
 
 } // namespace VideoDubber

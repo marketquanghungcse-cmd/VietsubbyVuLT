@@ -228,13 +228,17 @@ button { cursor: pointer; font-weight: 600; }
                                     <div id="url-extract-hint" style="margin-top: 6px; font-size: 11.5px; color: #10b981; display: none;">
                                         ✨ Đã tự động bóc tách link sạch: <span id="url-extract-val" style="font-family: monospace; font-weight: 600;"></span>
                                     </div>
-                                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; gap: 8px;">
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <span style="font-size: 13px;">🎵</span>
                                             <span style="font-size: 12px; color: var(--text-sub);">Tài khoản Douyin:</span>
                                             <span id="douyin-login-badge" class="badge-pill" style="font-size: 11px; padding: 2px 8px; background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid #475569;">Chưa đăng nhập (Khách)</span>
                                         </div>
-                                        <button class="btn-secondary btn-sm" onclick="loginDouyin()" title="Mở trình duyệt đăng nhập tài khoản Douyin">🔑 Đăng Nhập Douyin</button>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button class="btn-secondary btn-sm" onclick="loginDouyin()" title="Mở trình duyệt Google Chrome trực quan trên màn hình để quét mã QR Douyin">🌐 Mở Chrome Đăng Nhập</button>
+                                            <button class="btn-secondary btn-sm" onclick="openCookieModal()" title="Dán cookie Douyin hoặc tải lên file cookie .txt/.json">📋 Nhập Cookie Thủ Công</button>
+                                            <button id="btn-douyin-logout" class="btn-danger btn-sm" style="display: none;" onclick="logoutDouyin()" title="Xóa cookie và đăng xuất tài khoản">Đăng Xuất</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -755,6 +759,24 @@ button { cursor: pointer; font-weight: 600; }
                     <button class="btn-outline" onclick="saveInspectorSrtOnly()">💾 Lưu Thay Đổi</button>
                     <button id="btn-modal-dl-mp4" class="btn-success" onclick="downloadOutputVideo()" style="display: none;">📥 Tải Video MP4</button>
                     <button id="btn-modal-resume" class="btn-primary" onclick="saveInspectorSrtAndResume()">▶️ Tiếp Tục Xử Lý</button>
+                </div>
+    <!-- Modal Nhập Cookie Douyin -->
+    <div id="modal-douyin-cookie" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 22px; width: 540px; max-width: 92vw; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <span>🔑</span> Nhập Cookie Tài Khoản Douyin Thủ Công
+            </h3>
+            <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 12px; line-height: 1.5;">
+                Dán chuỗi Cookie từ trình duyệt của bạn (từ extension Cookie-Editor hoặc F12 Network Header Cookie), hoặc tải file <code>.txt</code> / <code>.json</code>:
+            </p>
+            <textarea id="douyin-cookie-input" rows="7" placeholder="Dán nội dung cookie vào đây... (Ví dụ: sessionid=xxxxxx; passport_auth_status=verified; hoặc mảng JSON [ { &quot;name&quot;: &quot;sessionid&quot;, ... } ])" style="width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 10px; font-family: monospace; font-size: 11.5px; resize: vertical;"></textarea>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; flex-wrap: wrap; gap: 8px;">
+                <input type="file" id="douyin-cookie-file-upload" accept=".txt,.json" style="display:none" onchange="handleDouyinCookieFileUpload(event)" />
+                <button class="btn-secondary btn-sm" onclick="document.getElementById('douyin-cookie-file-upload').click()">📁 Nạp từ File .txt / .json</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary btn-sm" onclick="closeCookieModal()">Hủy</button>
+                    <button class="btn-primary btn-sm" onclick="saveManualCookies()">💾 Lưu Cookie</button>
                 </div>
             </div>
         </div>

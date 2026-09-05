@@ -83,4 +83,48 @@ int ProcessRunner::execute(const std::string& command_line) {
     return waitProcess(h);
 }
 
+HANDLE ProcessRunner::launchVisibleProcess(const std::string& command_line) {
+    STARTUPINFOW si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_SHOWNORMAL;
+
+    ZeroMemory(&pi, sizeof(pi));
+
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, command_line.c_str(), -1, NULL, 0);
+    if (wlen <= 0) return INVALID_HANDLE_VALUE;
+    std::wstring wcmd(wlen, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, command_line.c_str(), -1, &wcmd[0], wlen);
+
+    std::wstring full_cmd = L"cmd.exe /c \"" + std::wstring(wcmd.c_str()) + L"\"";
+    std::vector<wchar_t> cmd_buf(full_cmd.begin(), full_cmd.end());
+    cmd_buf.push_back(L'\0');
+
+    if (!CreateProcessW(
+        NULL,
+        cmd_buf.data(),
+        NULL,
+        NULL,
+        FALSE,
+        CREATE_NEW_CONSOLE,
+        NULL,
+        NULL,
+        &si,
+        &pi
+    )) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    CloseHandle(pi.hThread);
+    return pi.hProcess;
+}
+
+int ProcessRunner::executeVisible(const std::string& command_line) {
+    HANDLE h = launchVisibleProcess(command_line);
+    if (h == NULL || h == INVALID_HANDLE_VALUE) return -1;
+    return waitProcess(h);
+}
+
 } // namespace VideoDubber

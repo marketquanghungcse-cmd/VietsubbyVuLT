@@ -1174,17 +1174,20 @@ async function checkDouyinStatus() {
         const res = await fetch('/api/douyin/status');
         const data = await res.json();
         const badge = document.getElementById('douyin-login-badge');
+        const logoutBtn = document.getElementById('btn-douyin-logout');
         if (badge) {
             if (data.logged_in) {
                 badge.style.background = 'rgba(16, 185, 129, 0.2)';
                 badge.style.color = '#10b981';
                 badge.style.border = '1px solid #10b981';
                 badge.innerText = '✅ Đã kết nối tài khoản';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
             } else {
                 badge.style.background = 'rgba(148, 163, 184, 0.1)';
                 badge.style.color = '#94a3b8';
                 badge.style.border = '1px solid #475569';
                 badge.innerText = 'Chưa đăng nhập (Khách)';
+                if (logoutBtn) logoutBtn.style.display = 'none';
             }
         }
     } catch (e) {}
@@ -1192,11 +1195,11 @@ async function checkDouyinStatus() {
 window.checkDouyinStatus = checkDouyinStatus;
 
 async function loginDouyin() {
-    if (!confirm("Hệ thống sẽ mở cửa sổ trình duyệt Chrome trên màn hình Windows.\nBạn chỉ cần mở app Douyin trên điện thoại -> Quét mã QR đăng nhập.\nSau khi đăng nhập xong, hệ thống sẽ tự động lưu cookies và đóng cửa sổ.\n\nBấm OK để mở cửa sổ đăng nhập!")) return;
+    if (!confirm("Hệ thống sẽ mở cửa sổ Google Chrome trên màn hình Windows.\n\nCác bước thực hiện:\n1. Khi cửa sổ Chrome hiện lên, nếu gặp thanh trượt ghép hình Captcha, hãy kéo thanh trượt để xác minh.\n2. Mở app Douyin trên điện thoại -> Quét mã QR đăng nhập (hoặc đăng nhập SĐT).\n3. Hệ thống sẽ TỰ ĐỘNG phát hiện khi đăng nhập thành công và lưu cookies!\n\nBấm OK để mở cửa sổ trình duyệt ngay!")) return;
     try {
         const res = await fetch('/api/douyin/login', { method: 'POST' });
         const data = await res.json();
-        alert(data.message || "Đã mở cửa sổ đăng nhập! Vui lòng quét mã QR trên màn hình.");
+        alert(data.message || "Đã khởi động trình duyệt Chrome! Vui lòng quan sát màn hình máy tính.");
         
         let attempts = 0;
         const interval = setInterval(async () => {
@@ -1206,12 +1209,83 @@ async function loginDouyin() {
             if (sData.logged_in) {
                 clearInterval(interval);
                 checkDouyinStatus();
-                alert("🎉 ĐĂNG NHẬP THÀNH CÔNG!\nCookies tài khoản của bạn đã được lưu vĩnh viễn. Mọi video Douyin sẽ được tải ở độ phân giải cao nhất.");
+                alert("🎉 ĐĂNG NHẬP THÀNH CÔNG!\nCookies tài khoản đã được lưu tự động. Video Douyin sẽ được tải ở độ phân giải gốc cao nhất.");
             }
-            if (attempts > 80) clearInterval(interval);
-        }, 3000);
+            if (attempts > 120) clearInterval(interval);
+        }, 2500);
     } catch (e) {
         alert("Lỗi kết nối máy chủ: " + e.message);
     }
 }
 window.loginDouyin = loginDouyin;
+
+function openCookieModal() {
+    const m = document.getElementById('modal-douyin-cookie');
+    if (m) {
+        m.classList.remove('hidden');
+        m.style.display = 'flex';
+    }
+}
+window.openCookieModal = openCookieModal;
+
+function closeCookieModal() {
+    const m = document.getElementById('modal-douyin-cookie');
+    if (m) {
+        m.classList.add('hidden');
+        m.style.display = 'none';
+    }
+}
+window.closeCookieModal = closeCookieModal;
+
+function handleDouyinCookieFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const ta = document.getElementById('douyin-cookie-input');
+        if (ta) ta.value = e.target.result;
+    };
+    reader.readAsText(file, 'utf-8');
+}
+window.handleDouyinCookieFileUpload = handleDouyinCookieFileUpload;
+
+async function saveManualCookies() {
+    const ta = document.getElementById('douyin-cookie-input');
+    const content = ta ? ta.value.trim() : '';
+    if (!content) {
+        alert("Vui lòng dán nội dung cookie hoặc tải file cookie trước!");
+        return;
+    }
+    try {
+        const res = await fetch('/api/douyin/save_cookies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cookies: content })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ Đã lưu cookie Douyin thành công!");
+            closeCookieModal();
+            checkDouyinStatus();
+        } else {
+            alert("❌ Lỗi lưu cookie: " + (data.message || "Không xác định"));
+        }
+    } catch (e) {
+        alert("Lỗi kết nối máy chủ: " + e.message);
+    }
+}
+window.saveManualCookies = saveManualCookies;
+
+async function logoutDouyin() {
+    if (!confirm("Bạn có chắc chắn muốn đăng xuất tài khoản Douyin và xóa cookies đã lưu?")) return;
+    try {
+        const res = await fetch('/api/douyin/logout', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || "Đã đăng xuất!");
+        checkDouyinStatus();
+    } catch (e) {
+        alert("Lỗi kết nối: " + e.message);
+    }
+}
+window.logoutDouyin = logoutDouyin;
+

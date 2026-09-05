@@ -1,4 +1,4 @@
-﻿# Build artifacts & Binaries
+# Build artifacts & Binaries
 build/
 bin/
 Release/
@@ -54,7 +54,8 @@ extract_*.py
 find_douyin_data.py
 fix_*.py
 generate_*.py
-make_*.py
+/make_*.py
+!scripts/make_batch_zip.py
 inspect_*.py
 down_*.py
 download_*.py
