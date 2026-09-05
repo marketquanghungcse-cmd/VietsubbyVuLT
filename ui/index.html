@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoDubberPro - Studio Dịch & Lồng Tiếng Video C++</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+
+:root {
+    --bg-body: #070b14;
+    --bg-sidebar: #0d1424;
+    --bg-card: #121b2f;
+    --bg-card-hover: #18243e;
+    --bg-input: #090e1a;
+    --border: #1e2c47;
+    --border-focus: #3b82f6;
+    --primary: #2563eb;
+    --primary-glow: rgba(37, 99, 235, 0.4);
+    --primary-hover: #1d4ed8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --purple: #8b5cf6;
+    --cyan: #06b6d4;
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --text-muted: #64748b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+body { background: var(--bg-body); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
+
+.app-layout { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 14px; flex-shrink: 0; }
+.main-container { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+
+.brand-header { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; padding: 0 8px; }
+.brand-logo { font-size: 28px; }
+.brand-title h2 { font-size: 17.5px; font-weight: 800; }
+.brand-badge { font-size: 9px; font-weight: 700; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 6px; border-radius: 4px; }
+
+.nav-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.nav-btn { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 9px; background: transparent; border: 1px solid transparent; color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s; }
+.nav-btn:hover { background: var(--bg-card); color: var(--text-main); border-color: var(--border); }
+.nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 16px var(--primary-glow); }
+.nav-btn .icon { font-size: 16px; }
+
+.sidebar-stats { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 11.5px; }
+.stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--text-sub); }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-val { font-weight: 700; color: var(--text-main); }
+
+.top-navbar { padding: 14px 26px; background: rgba(13, 20, 36, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+.page-meta h1 { font-size: 18px; font-weight: 800; }
+.page-meta p { font-size: 11.5px; color: var(--text-sub); margin-top: 2px; }
+.header-tools { display: flex; align-items: center; gap: 10px; }
+
+.badge-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight: 700; background: var(--bg-card); border: 1px solid var(--border); }
+.badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+
+.content-body { padding: 22px 26px; }
+.tab-section { display: none; }
+.tab-section.active { display: block; animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.grid-2col { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-header h3 { font-size: 15px; font-weight: 700; }
+
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input[type="text"], input[type="number"], select, textarea { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 13px; outline: none; transition: border 0.2s, box-shadow 0.2s; }
+input:focus, select:focus, textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+
+.sub-tabs { display: flex; gap: 6px; margin-bottom: 14px; background: var(--bg-input); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+.sub-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; color: var(--text-sub); font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.sub-tab-btn.active { background: var(--bg-card); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+button { cursor: pointer; font-weight: 600; }
+.btn-primary { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; transition: all 0.2s; box-shadow: 0 4px 12px var(--primary-glow); }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-secondary { background: #1e293b; color: #fff; border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; font-size: 13px; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 8px 14px; border-radius: 8px; font-size: 12px; }
+.btn-outline:hover { background: var(--bg-card-hover); }
+.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+.btn-success { background: var(--success); color: #fff; border: none; }
+.btn-warning { background: var(--warning); color: #000; border: none; }
+.btn-danger { background: var(--danger); color: #fff; border: none; }
+.btn-purple { background: var(--purple); color: #fff; border: none; }
+
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.filter-pills { display: flex; gap: 6px; }
+.filter-pill { padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-sub); cursor: pointer; }
+.filter-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.search-box { width: 220px; }
+
+.table-responsive { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-input); }
+.custom-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.custom-table th { padding: 11px 13px; background: #0c1322; color: var(--text-sub); font-weight: 700; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.custom-table td { padding: 11px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.custom-table tr:last-child td { border-bottom: none; }
+.custom-table tr:hover { background: rgba(30, 41, 59, 0.4); }
+
+.platform-tag { font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+.tag-Douyin { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.tag-TikTok { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+.tag-Facebook { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.tag-YouTube { background: rgba(220, 38, 38, 0.15); color: #ef4444; border: 1px solid rgba(220, 38, 38, 0.3); }
+.tag-Rednote { background: rgba(255, 36, 66, 0.18); color: #ff4d6d; border: 1px solid rgba(255, 36, 66, 0.4); }
+.tag-Kuaishou { background: rgba(249, 115, 22, 0.18); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
+
+.status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; }
+.st-QUEUED { background: #334155; color: #cbd5e1; }
+.st-DOWNLOADING { background: #0369a1; color: #e0f2fe; }
+.st-TRANSCRIBING_STT { background: #6d28d9; color: #ede9fe; }
+.st-TRANSLATING_AI { background: #b45309; color: #fef3c7; }
+.st-PROCESSING_AUDIO { background: #1d4ed8; color: #dbeafe; }
+.st-RENDERING_VIDEO { background: #047857; color: #d1fae5; }
+.st-COMPLETED { background: #15803d; color: #dcfce7; }
+.st-FAILED { background: #b91c1c; color: #fee2e2; }
+.st-PAUSED { background: #d97706; color: #fff; }
+
+.prog-wrap { width: 100%; background: #1e293b; border-radius: 6px; height: 6px; overflow: hidden; margin-top: 4px; }
+.prog-bar { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.3s; }
+
+.terminal { background: #040711; border: 1px solid var(--border); border-radius: 10px; padding: 16px; height: 520px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #86efac; line-height: 1.6; }
+
+.modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 92%; max-width: 1050px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--border); }
+.modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+.modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+
+.inspector-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 16px; }
+.insp-tab-btn { padding: 8px 14px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer; }
+.insp-tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.hidden { display: none !important; }
+.mt-3 { margin-top: 12px; } .mt-4 { margin-top: 18px; } .mb-3 { margin-bottom: 12px; }
+.text-muted { color: var(--text-muted); font-size: 12px; }
+.flex-gap { display: flex; gap: 8px; align-items: center; }
+
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation (Exact 4 Menu Tabs) -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <span class="brand-logo">🎬</span>
+                <div class="brand-title">
+                    <h2>VideoDubber</h2>
+                    <span class="brand-badge">C++ PRO STUDIO</span>
+                </div>
+            </div>
+
+            <!-- Stats Widget -->
+            <div class="sidebar-stats">
+                <div class="stat-row"><span>Tổng Tác Vụ:</span><span class="stat-val" id="stat-total">0</span></div>
+                <div class="stat-row"><span>Đang Chạy:</span><span class="stat-val" style="color:#60a5fa" id="stat-running">0</span></div>
+                <div class="stat-row"><span>Tạm Dừng:</span><span class="stat-val" style="color:#fbbf24" id="stat-paused">0</span></div>
+                <div class="stat-row"><span>Hoàn Thành:</span><span class="stat-val" style="color:#34d399" id="stat-done">0</span></div>
+            </div>
+
+            <nav class="nav-list">
+                <button class="nav-btn active" onclick="switchTab('queue')">
+                    <span class="icon">⚡</span> Hàng Đợi & Thêm Video
+                </button>
+                <button class="nav-btn" onclick="switchTab('keys')">
+                    <span class="icon">🔑</span> Quản Lý API Key Pool
+                </button>
+                <button class="nav-btn" onclick="switchTab('settings')">
+                    <span class="icon">⚙️</span> Cài Đặt & Điểm Dừng
+                </button>
+                <button class="nav-btn" onclick="switchTab('logs')">
+                    <span class="icon">📜</span> Nhật Ký Hoạt Động
+                </button>
+            </nav>
+
+            <div style="margin-top:auto; padding-top:14px; border-top:1px solid var(--border);">
+                <button class="btn-outline" style="width:100%" onclick="openOutputFolder()">📂 Mở Thư Mục Output</button>
+            </div>
+        </aside>
+
+        <!-- Main Container -->
+        <main class="main-container">
+            <header class="top-navbar">
+                <div class="page-meta">
+                    <h1 id="top-title">⚡ Bảng Điều Khiển & Hàng Đợi Video</h1>
+                    <p id="top-sub">Tự động tải video, bóc sub tiếng Trung, dịch Gemini/DeepSeek, lồng voice & che sub cũ</p>
+                </div>
+                <div class="header-tools">
+                    <div class="badge-pill" title="Địa chỉ để các thiết bị khác trong mạng LAN truy cập">🌐 LAN: <span id="hdr-host-ip" style="font-weight:700; color:#38bdf8;">192.168.1.92:8765</span></div>
+                    <div class="badge-pill"><span class="badge-dot"></span> <span id="hdr-engine">✨ Gemini 2.0 Flash</span></div>
+                    <div class="badge-pill">🇻🇳 <span id="hdr-lang">Tiếng Việt</span></div>
+                    <button class="btn-primary btn-sm" onclick="fetchTasks()">🔄 Làm Mới</button>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- ============================================================= -->
+                <!-- TAB 1: HÀNG ĐỢI & THÊM VIDEO -->
+                <!-- ============================================================= -->
+                <section id="sec-queue" class="tab-section active">
+                    <div class="grid-2col">
+                        <!-- Input Card -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📥 Thêm Video Vào Hàng Đợi</h3>
+                            </div>
+                            <div class="sub-tabs">
+                                <button class="sub-tab-btn active" onclick="setInputMode('single')">🔗 Link Đơn</button>
+                                <button class="sub-tab-btn" onclick="setInputMode('batch')">📄 Danh Sách (.txt / Nhiều Link)</button>
+                                <button class="sub-tab-btn" onclick="setInputMode('file')">📁 File Video Có Sẵn</button>
+                            </div>
+
+                            <div id="box-single">
+                                <div class="form-group">
+                                    <label>Dán link hoặc nội dung chia sẻ (Tự động bóc tách link sạch từ Rednote, Douyin, TikTok, Facebook, YouTube, Kuaishou):</label>
+                                    <div class="flex-gap">
+                                        <input type="text" id="single-url" placeholder="Dán link hoặc cả đoạn text chia sẻ (VD: 85 [Tiêu đề...] https://...)" />
+                                        <button class="btn-primary" onclick="addSingleUrl()">+ Thêm Video</button>
+                                    </div>
+                                    <div id="url-extract-hint" style="margin-top: 6px; font-size: 11.5px; color: #10b981; display: none;">
+                                        ✨ Đã tự động bóc tách link sạch: <span id="url-extract-val" style="font-family: monospace; font-weight: 600;"></span>
+                                    </div>
+                                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 13px;">🎵</span>
+                                            <span style="font-size: 12px; color: var(--text-sub);">Tài khoản Douyin:</span>
+                                            <span id="douyin-login-badge" class="badge-pill" style="font-size: 11px; padding: 2px 8px; background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid #475569;">Chưa đăng nhập (Khách)</span>
+                                        </div>
+                                        <button class="btn-secondary btn-sm" onclick="loginDouyin()" title="Mở trình duyệt đăng nhập tài khoản Douyin">🔑 Đăng Nhập Douyin</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="box-batch" class="hidden">
+                                <div class="form-group">
+                                    <label>Dán danh sách link (1 dòng / 1 link) hoặc nạp file .txt:</label>
+                                    <textarea id="batch-urls" rows="4" placeholder="https://v.douyin.com/abc/&#10;https://www.tiktok.com/@user/video/123&#10;https://youtube.com/shorts/..."></textarea>
+                                    <div class="flex-gap mt-3" style="justify-content: flex-end;">
+                                        <input type="file" id="txt-file-input" accept=".txt" style="display:none" onchange="handleTxtUpload(event)" />
+                                        <button class="btn-secondary" onclick="document.getElementById('txt-file-input').click()">📄 Nạp từ file .txt</button>
+                                        <button class="btn-primary" onclick="addBatchUrls()">+ Thêm Tất Cả Vào Queue</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="box-file" class="hidden">
+                                <div class="form-group">
+                                    <label>Đường dẫn file video MP4 trên máy:</label>
+                                    <div class="flex-gap">
+                                        <input type="text" id="local-file-path" placeholder="C:\Videos\input.mp4" />
+                                        <button class="btn-primary" onclick="addLocalFile()">+ Thêm File</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Output Naming Customization -->
+                            <div style="margin-top: 14px; padding: 10px 14px; background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid var(--border);">
+                                <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 200px;">
+                                        <label style="font-size: 11.5px; color: var(--text-sub); display: block; margin-bottom: 5px; font-weight: 600;">🏷️ Quy tắc đặt tên file đầu ra:</label>
+                                        <select id="task-naming-pattern" style="width: 100%; padding: 7px 10px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main);" onchange="toggleCustomNameInput()">
+                                            <option value="seq_title">🔢 [STT] 01_TênVideo.mp4, 02_TênVideo.mp4...</option>
+                                            <option value="id_title">🆔 [ID] task_1_TênVideo.mp4...</option>
+                                            <option value="custom_seq">✏️ [Tự Đặt] TênRiêng_01.mp4, TênRiêng_02.mp4...</option>
+                                            <option value="original_dubbed">🏷️ [Tên Gốc] TênGốc_dubbed.mp4</option>
+                                        </select>
+                                    </div>
+                                    <div id="wrap-custom-name" style="flex: 1; min-width: 200px; display: none;">
+                                        <label style="font-size: 11.5px; color: var(--text-sub); display: block; margin-bottom: 5px; font-weight: 600;">✏️ Nhập tên riêng / Tiền tố:</label>
+                                        <input type="text" id="task-custom-name" placeholder="VD: Review_Nha, Tap_01..." style="width: 100%; padding: 7px 10px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main);" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Presets Card -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>⚡ Tùy Chọn Xử Lý Nhanh</h3>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Ngôn ngữ dịch:</label>
+                                    <select id="quick-target-lang" onchange="updateQuickPreset()">
+                                        <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
+                                        <option value="en">🇺🇸 English</option>
+                                        <option value="zh">🇨🇳 Tiếng Trung (Chinese)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Giọng đọc TTS:</label>
+                                    <select id="quick-tts-voice" onchange="updateQuickPreset()">
+                                        <option value="vi-VN-HoaiMyNeural">👩 Hoài My (Nữ Việt - Chuẩn hay)</option>
+                                        <option value="vi-VN-NamMinhNeural">👨 Nam Minh (Nam Việt - Tự nhiên)</option>
+                                        <option value="vibi">🎙️ ViBi.pro AI (MiniMax / ElevenLabs)</option>
+                                        <option value="en-US-JennyNeural">🇺🇸 Jenny (Nữ Mỹ)</option>
+                                        <option value="en-US-GuyNeural">🇺🇸 Guy (Nam Mỹ)</option>
+                                        <option value="google">🌐 Google Translate TTS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Mô hình Dịch:</label>
+                                    <select id="quick-model" onchange="updateQuickPreset()">
+                                        <option value="gemini">✨ Google Gemini 2.0 Flash (Mặc định)</option>
+                                        <option value="deepseek">🐋 DeepSeek Chat (Sát nghĩa)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Chế độ BGM:</label>
+                                    <select id="quick-bgm-mode" onchange="updateQuickPreset()">
+                                        <option value="keep_bgm">🎵 Giữ BGM gốc (AI Demucs tách giọng)</option>
+                                        <option value="mute_old">🔇 Tắt sạch âm cũ (Chỉ lấy voice mới)</option>
+                                        <option value="ducking">📉 Giảm nhỏ âm cũ (Ducking 18%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 6px;">
+                                <label>🛡️ Chế Độ Xử Lý Chữ & Sub Trên Video:</label>
+                                <select id="quick-blur-sub-mode" onchange="updateQuickPreset()">
+                                    <option value="auto_ocr" selected>🟢 Việt hóa & Che mờ động OCR (Quét nhận diện chữ, che đúng vị trí & chèn sub Việt)</option>
+                                    <option value="sub_tts_mute">🔥 Chèn Sub + Dub Giọng TTS + Xóa sạch âm gốc (Không che mờ, nét 100%)</option>
+                                    <option value="sub_only">📝 Chèn sub Tiếng Việt nhưng KHÔNG che mờ (Giữ 100% âm thanh gốc)</option>
+                                    <option value="bottom_sub">🟡 Chỉ che phụ đề đáy (Dành cho phim / hoạt hình có hardsub cố định)</option>
+                                    <option value="none">⚪ Không che mờ & Không việt hóa (Chỉ lồng tiếng - Giữ video gốc 100%)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Queue Table Card -->
+                    <div class="card mt-4">
+                        <div class="table-toolbar">
+                            <div class="filter-pills">
+                                <span class="filter-pill active" onclick="setFilter('ALL')">Tất Cả</span>
+                                <span class="filter-pill" onclick="setFilter('RUNNING')">Đang Chạy</span>
+                                <span class="filter-pill" onclick="setFilter('PAUSED')">Tạm Dừng</span>
+                                <span class="filter-pill" onclick="setFilter('COMPLETED')">Hoàn Thành</span>
+                                <span class="filter-pill" onclick="setFilter('FAILED')">Lỗi</span>
+                            </div>
+                            <div class="flex-gap" style="align-items:center;">
+                                <div style="display:flex; align-items:center; gap:6px; background:rgba(15,23,42,0.6); padding:4px 10px; border-radius:6px; border:1px solid var(--border);" title="Số lượng video được tải và xử lý đồng thời">
+                                    <span style="font-size:11.5px; color:var(--text-sub); white-space:nowrap; font-weight:600;">⚡ Chạy song song:</span>
+                                    <select id="quick-concurrency" onchange="changeConcurrency(this.value)" style="padding:3px 8px; font-size:12px; font-weight:700; background:var(--bg-input); color:#38bdf8; border:1px solid var(--border); border-radius:4px; cursor:pointer;">
+                                        <option value="1">1 video</option>
+                                        <option value="2">2 video</option>
+                                        <option value="3">3 video</option>
+                                        <option value="4">4 video (Khuyên dùng)</option>
+                                        <option value="5">5 video</option>
+                                        <option value="6">6 video</option>
+                                        <option value="8">8 video (Cực nhanh)</option>
+                                    </select>
+                                </div>
+                                <input type="text" id="task-search" class="search-box" placeholder="🔍 Tìm kiếm video..." oninput="fetchTasks()">
+                                <button class="btn-success btn-sm" id="btn-batch-dl-all" onclick="downloadBatchZip(false)" title="Đóng gói tất cả video đã hoàn thành thành 1 file ZIP duy nhất để tải về nhanh">📦 Tải Tất Cả (ZIP)</button>
+                                <button class="btn-purple btn-sm" id="btn-batch-dl-selected" onclick="downloadBatchZip(true)" title="Tải các video đang được tích chọn dạng ZIP">📦 Tải Đã Chọn (ZIP)</button>
+                                <button class="btn-outline btn-sm" onclick="deleteCompleted()">🧹 Xóa Đã Xong</button>
+                                <button class="btn-danger btn-sm" onclick="clearAllQueue()">🗑️ Xóa Hết Queue</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th width="35"><input type="checkbox" id="chk-all" onchange="toggleSelectAll(this)"></th>
+                                        <th width="45">STT</th>
+                                        <th>Video / Nguồn Link</th>
+                                        <th width="110">Nền Tảng</th>
+                                        <th width="170">Trạng Thái Quy Trình</th>
+                                        <th width="130">Tiến Trình</th>
+                                        <th width="200" style="text-align:right;">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- TAB 2: QUẢN LÝ API KEY POOL -->
+                <!-- ============================================================= -->
+                <section id="sec-keys" class="tab-section">
+                    <div class="grid-2col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>➕ Thêm API Key Mới (Chỉ cần nhập 1 lần)</h3>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nhà Cung Cấp:</label>
+                                    <select id="new-key-provider">
+                                        <option value="gemini">Google Gemini API</option>
+                                        <option value="deepseek">DeepSeek API</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Nhãn Ghi Chú:</label>
+                                    <input type="text" id="new-key-label" placeholder="VD: Gemini Key Chính 1, DeepSeek Backup..." />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Mã API Key:</label>
+                                <div class="flex-gap">
+                                    <input type="text" id="new-key-value" placeholder="AIzaSy... hoặc sk-..." />
+                                    <button class="btn-primary" onclick="addApiKey()">+ Lưu API Key</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>ℹ️ Cơ Chế Xoay Vòng & Lưu Trữ Vĩnh Viễn</h3>
+                            </div>
+                            <p class="text-muted mb-3" style="line-height: 1.6;">
+                                API Key của bạn sẽ được <strong>lưu vĩnh viễn vào hệ thống (config.json)</strong>, bạn chỉ cần nhập 1 lần. Khi chạy dịch thuật số lượng lớn, hệ thống sẽ tự động chuyển sang Key tiếp theo nếu gặp lỗi giới hạn tần suất <code>429 Rate Limit</code>.
+                            </p>
+                            <div style="background:var(--bg-input); padding:10px 12px; border-radius:8px; border:1px solid var(--border); font-size:12px;">
+                                <div>💡 Bấm nút <strong>⚡ Test Key Thực Tế</strong> trong bảng dưới để kiểm tra trực tiếp xem Key có hoạt động hay không.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Keys Table -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h3>🔑 Danh Sách API Key Đang Hoạt Động</h3>
+                            <button class="btn-outline btn-sm" onclick="loadApiKeys()">🔄 Làm Mới</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Loại Provider</th>
+                                        <th>Tên Nhãn</th>
+                                        <th>Mã Key</th>
+                                        <th>Thành Công</th>
+                                        <th>Lỗi</th>
+                                        <th>Trạng Thái</th>
+                                        <th style="text-align:right;">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="keys-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- TAB 3: CÀI ĐẶT & ĐIỂM DỪNG -->
+                <!-- ============================================================= -->
+                <section id="sec-settings" class="tab-section">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3>⏸️ Cấu Hình Điểm Dừng Can Thiệp (Pause Checkpoints)</h3>
+                        </div>
+                        <p class="text-muted mb-3">Bật các bước bạn muốn hệ thống tự động tạm dừng lại để bạn kiểm tra và chỉnh sửa trước khi đi tiếp.</p>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" id="cfg-pause-dl" style="width:16px; height:16px;">
+                                <span>Tạm dừng sau khi tải video xong (Kiểm tra video gốc)</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" id="cfg-pause-stt" style="width:16px; height:16px;">
+                                <span>Tạm dừng sau khi bóc sub Whisper (Để sửa phụ đề tiếng Trung gốc)</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" id="cfg-pause-trans" style="width:16px; height:16px;">
+                                <span>Tạm dừng sau khi dịch AI (Để kiểm tra và sửa câu chữ bản dịch)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>⚙️ Cấu Hình Mặc Định Của Ứng Dụng</h3>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mô hình Dịch mặc định:</label>
+                                <select id="cfg-model">
+                                    <option value="gemini">✨ Google Gemini 2.0 Flash</option>
+                                    <option value="deepseek">🐋 DeepSeek Chat</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ngôn ngữ dịch mặc định:</label>
+                                <select id="cfg-target-lang">
+                                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                                    <option value="en">🇺🇸 English</option>
+                                    <option value="zh">🇨🇳 Tiếng Trung</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Giọng đọc TTS mặc định:</label>
+                                <select id="cfg-voice">
+                                    <option value="vi-VN-HoaiMyNeural">👩 Hoài My (Nữ Việt)</option>
+                                    <option value="vi-VN-NamMinhNeural">👨 Nam Minh (Nam Việt)</option>
+                                    <option value="vibi">🎙️ ViBi.pro AI Voice (MiniMax / ElevenLabs)</option>
+                                    <option value="en-US-JennyNeural">🇺🇸 Jenny (Nữ Mỹ)</option>
+                                    <option value="en-US-GuyNeural">🇺🇸 Guy (Nam Mỹ)</option>
+                                    <option value="google">🌐 Google Translate TTS</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Chế độ âm thanh BGM mặc định:</label>
+                                <select id="cfg-bgm">
+                                    <option value="keep_bgm">🎵 Giữ BGM gốc (AI Demucs tách giọng)</option>
+                                    <option value="mute_old">🔇 Tắt sạch âm cũ</option>
+                                    <option value="ducking">📉 Giảm nhỏ âm cũ (18%)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Chế độ che mờ phụ đề & việt hóa mặc định:</label>
+                                <select id="cfg-blur-sub-mode">
+                                    <option value="auto_ocr">🟢 Việt hóa & Che mờ động OCR (Quét nhận diện chữ, che đúng vị trí & chèn sub Việt)</option>
+                                    <option value="sub_tts_mute">🔥 Chèn Sub + Dub Giọng TTS + Xóa sạch âm gốc (Không che mờ, nét 100%)</option>
+                                    <option value="sub_only">📝 Chèn sub Tiếng Việt nhưng KHÔNG che mờ (Giữ 100% âm thanh gốc)</option>
+                                    <option value="bottom_sub">🟡 Chỉ che phụ đề đáy (Dành cho phim / hoạt hình có hardsub cố định)</option>
+                                    <option value="none">⚪ Không che mờ & Không việt hóa (Chỉ lồng tiếng - Giữ video gốc 100%)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Độ nhòe Blur Kernel:</label>
+                                <input type="number" id="cfg-blur-kernel" min="5" max="51" step="2" value="25">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label>⚡ Số video chạy song song (Concurrency):</label>
+                                <select id="cfg-max-concurrent">
+                                    <option value="1">1 video (Tiết kiệm RAM/CPU)</option>
+                                    <option value="2">2 video (Mặc định)</option>
+                                    <option value="3">3 video</option>
+                                    <option value="4">4 video (Khuyên dùng)</option>
+                                    <option value="5">5 video</option>
+                                    <option value="6">6 video</option>
+                                    <option value="8">8 video (Cực nhanh)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1.2;">
+                                <label>📁 Thư mục lưu video đầu ra (Output Directory):</label>
+                                <input type="text" id="cfg-output-dir" placeholder="outputs">
+                            </div>
+                            <div class="form-group" style="flex: 1.5;">
+                                <label>🏷️ Quy tắc đặt tên file mặc định:</label>
+                                <select id="cfg-output-naming">
+                                    <option value="seq_title">🔢 [STT] 01_TênVideo.mp4, 02_TênVideo.mp4...</option>
+                                    <option value="id_title">🆔 [ID] task_1_TênVideo.mp4...</option>
+                                    <option value="custom_seq">✏️ [Tự Đặt] TênRiêng_01.mp4, TênRiêng_02.mp4...</option>
+                                    <option value="original_dubbed">🏷️ [Tên Gốc] TênGốc_dubbed.mp4</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>✏️ Tiền tố mặc định (Khi chọn Tự Đặt):</label>
+                                <input type="text" id="cfg-custom-prefix" placeholder="VD: Video, Tap...">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn-primary" onclick="saveFullSettings()">💾 Lưu Cài Đặt Chung</button>
+                        </div>
+                    </div>
+
+                    <!-- ViBi.pro Integration Card -->
+                    <div class="card mt-3">
+                        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h3>🎙️ Kho Giọng Đọc Cao Cấp ViBi.pro (MiniMax / ElevenLabs)</h3>
+                                <span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 8px; border-radius:4px; font-size:11px;">vibi.pro AI</span>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Tích hợp API giọng đọc AI diễn cảm từ vibi.pro (hỗ trợ các model MiniMax Speech 2.8, ElevenLabs, CapCut và giọng clone độc quyền).</p>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>ViBi API Key / Token:</label>
+                                <div style="display:flex; gap:8px;">
+                                    <input type="password" id="cfg-vibi-key" placeholder="Nhập API Key hoặc Token từ vibi.pro" style="flex:1;">
+                                    <button type="button" class="btn-outline btn-sm" onclick="toggleVibiKeyVisibility()">👁️</button>
+                                </div>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Nhà cung cấp (Provider):</label>
+                                <select id="cfg-vibi-provider" onchange="onVibiProviderChange()">
+                                    <option value="minimax">MiniMax (Tối ưu phim / truyện)</option>
+                                    <option value="elevenlabs">ElevenLabs (Tự nhiên / Cảm xúc)</option>
+                                    <option value="capcut">CapCut Voices</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mô hình (Model ID):</label>
+                                <input type="text" id="cfg-vibi-model" placeholder="speech-2.8-turbo / eleven_multilingual_v2" value="speech-2.8-turbo">
+                            </div>
+                            <div class="form-group">
+                                <label>Voice ID mặc định (hoặc nhập mã giọng):</label>
+                                <input type="text" id="cfg-vibi-voice-id" placeholder="Nhập Voice ID (VD: 226905123659939, English_ManWithDeepVoice, ...)">
+                            </div>
+                        </div>
+                        <div class="form-row" style="align-items:center; justify-content:space-between; margin-top:10px;">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <button type="button" class="btn-outline" onclick="testVibiConnection()">⚡ Kiểm Tra Kết Nối & Số Dư</button>
+                                <button type="button" class="btn-outline" onclick="loadVibiVoices()">📋 Tải Danh Sách Giọng Đọc</button>
+                            </div>
+                            <div id="vibi-status-badge" style="font-size:13px; font-weight:500;"></div>
+                        </div>
+                        <div id="vibi-voices-container" style="display:none; margin-top:15px; max-height:220px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:10px; background:rgba(0,0,0,0.25);">
+                            <div style="font-size:12px; margin-bottom:6px; color:#a1a1aa;">Nhấp vào một giọng bên dưới để chọn nhanh làm Voice ID mặc định:</div>
+                            <div id="vibi-voices-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn-primary" onclick="saveVibiSettings()">💾 Lưu Cấu Hình ViBi</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- TAB 4: NHẬT KÝ HOẠT ĐỘNG -->
+                <!-- ============================================================= -->
+                <section id="sec-logs" class="tab-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📜 Nhật Ký Hoạt Động Thời Gian Thực</h3>
+                            <button class="btn-outline btn-sm" onclick="fetchLogs()">🔄 Làm Mới</button>
+                        </div>
+                        <div class="terminal" id="term-box"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: TRÌNH KIỂM TRA QUY TRÌNH & SỬA PHỤ ĐỀ -->
+    <!-- ============================================================= -->
+    <div id="modal-inspector" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <h3 id="insp-task-title" style="font-size:16px;">🔍 Kiểm Tra Chi Tiết Video</h3>
+                    <div style="font-size:11.5px; color:var(--text-sub); margin-top:2px;">
+                        Trạng thái: <span class="status-badge st-DOWNLOADING" id="insp-task-status">Sẵn sàng</span> | Tiến trình: <strong id="insp-task-progress">0%</strong>
+                    </div>
+                </div>
+                <button class="btn-outline btn-sm" onclick="closeModal('modal-inspector')">✕ Đóng</button>
+            </div>
+            <div class="modal-body">
+                <div class="inspector-tabs">
+                    <button class="insp-tab-btn active" onclick="switchInspectorTab('tab-insp-source')">🎙️ Phụ Đề Gốc (Tiếng Trung)</button>
+                    <button class="insp-tab-btn" onclick="switchInspectorTab('tab-insp-trans')">✨ Bản Dịch AI (Song Ngữ)</button>
+                    <button class="insp-tab-btn" onclick="switchInspectorTab('tab-insp-tts')">🔊 Giọng Đọc (TTS Voice)</button>
+                    <button class="insp-tab-btn" onclick="switchInspectorTab('tab-insp-rawvid')">📹 Video Gốc Đã Tải</button>
+                    <button class="insp-tab-btn" onclick="switchInspectorTab('tab-insp-outvid')">🎬 Video Thành Phẩm MP4</button>
+                </div>
+
+                <!-- 1. Source SRT -->
+                <div id="tab-insp-source" class="insp-step-content">
+                    <div class="flex-gap mb-3" style="justify-content:space-between;">
+                        <button class="btn-secondary btn-sm" onclick="addInspSourceRow()">➕ Thêm Dòng</button>
+                        <div class="flex-gap">
+                            <span class="text-muted">Bấm vào từng ô để sửa nội dung hoặc mốc thời gian</span>
+                            <button class="btn-outline btn-sm" onclick="downloadCurrentSrt('source')">📥 Tải File Sub Gốc (.srt)</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">STT</th>
+                                    <th width="150">Thời Gian</th>
+                                    <th>Câu Gốc Tiếng Trung (Bóc Từ Whisper)</th>
+                                    <th width="70" style="text-align:right;">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="insp-source-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Translated SRT -->
+                <div id="tab-insp-trans" class="insp-step-content hidden">
+                    <div class="flex-gap mb-3" style="justify-content:space-between;">
+                        <span class="text-muted">Bấm vào từng ô để chỉnh sửa bản dịch tiếng Việt</span>
+                        <button class="btn-outline btn-sm" onclick="downloadCurrentSrt('trans')">📥 Tải File Sub Dịch (.srt)</button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">STT</th>
+                                    <th width="140">Thời Gian</th>
+                                    <th width="35%">Tiếng Trung Gốc</th>
+                                    <th>Bản Dịch AI (Có thể sửa)</th>
+                                    <th width="110" style="text-align:right;">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="insp-trans-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. TTS Voice Preview -->
+                <div id="tab-insp-tts" class="insp-step-content hidden">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">STT</th>
+                                    <th width="140">Thời Gian</th>
+                                    <th>Câu Thoại Sẽ Đọc (TTS)</th>
+                                    <th width="110">Độ Tốc Độ</th>
+                                    <th width="240" style="text-align:right;">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="insp-tts-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. Raw Video Player -->
+                <div id="tab-insp-rawvid" class="insp-step-content hidden" style="text-align:center;">
+                    <video id="insp-raw-video" controls style="max-width:100%; max-height:420px; border-radius:8px; background:#000;"></video>
+                    <div id="insp-no-raw-video" class="text-muted" style="padding:30px;">Video gốc chưa được tải về hoặc chưa có sẵn.</div>
+                </div>
+
+                <!-- 5. Output Video Player -->
+                <div id="tab-insp-outvid" class="insp-step-content hidden" style="text-align:center;">
+                    <video id="insp-out-video" controls style="max-width:100%; max-height:420px; border-radius:8px; background:#000;"></video>
+                    <div id="insp-no-out-video" class="text-muted" style="padding:30px;">Video thành phẩm chưa được render xong.</div>
+                    <div id="insp-out-actions" class="flex-gap mt-3" style="justify-content:center; display:none;">
+                        <button class="btn-primary" onclick="downloadOutputVideo()">📥 Tải Video Về Máy (.mp4)</button>
+                        <button class="btn-secondary" onclick="openOutputFolder()">📂 Mở Thư Mục Output</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn-secondary" onclick="closeModal('modal-inspector')">Đóng</button>
+                <div class="flex-gap">
+                    <button class="btn-outline" onclick="saveInspectorSrtOnly()">💾 Lưu Thay Đổi</button>
+                    <button id="btn-modal-dl-mp4" class="btn-success" onclick="downloadOutputVideo()" style="display: none;">📥 Tải Video MP4</button>
+                    <button id="btn-modal-resume" class="btn-primary" onclick="saveInspectorSrtAndResume()">▶️ Tiếp Tục Xử Lý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
