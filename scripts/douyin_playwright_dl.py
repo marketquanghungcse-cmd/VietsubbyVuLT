@@ -173,31 +173,42 @@ def download_with_playwright(video_id, output_dir):
                 });
             """)
             
-            # Load user login cookies if available
+            # Load user login cookies from cookie pool if available
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            cookie_json_paths = [
-                os.path.join(base_dir, "config", "douyin_cookies.json"),
-                os.path.join(base_dir, "temp", "douyin_cookies.json")
-            ]
+            import glob
+            cookie_json_paths = sorted(glob.glob(os.path.join(base_dir, "config", "douyin_cookies*.json")))
+            if not cookie_json_paths:
+                cookie_json_paths = [os.path.join(base_dir, "temp", "douyin_cookies.json")]
+            
+            chosen_cookie_file = None
             for cjp in cookie_json_paths:
-                if os.path.exists(cjp):
-                    try:
-                        with open(cjp, 'r', encoding='utf-8') as f:
-                            user_cookies = json.load(f)
-                            context.add_cookies(user_cookies)
-                            sys.stderr.write(f"[INFO] Successfully loaded {len(user_cookies)} cookies from user login!\n")
-                            break
-                    except Exception as e:
-                        sys.stderr.write(f"[WARN] Failed to load cookies from {cjp}: {e}\n")
+                if os.path.exists(cjp) and os.path.getsize(cjp) > 100:
+                    chosen_cookie_file = cjp
+                    break
+            
+            # If multiple accounts exist, rotate based on video_id
+            valid_pool = [p for p in cookie_json_paths if os.path.exists(p) and os.path.getsize(p) > 100]
+            if len(valid_pool) > 1:
+                try:
+                    chosen_cookie_file = valid_pool[abs(int(video_id)) % len(valid_pool)]
+                except Exception:
+                    chosen_cookie_file = valid_pool[0]
+
+            if chosen_cookie_file and os.path.exists(chosen_cookie_file):
+                try:
+                    with open(chosen_cookie_file, 'r', encoding='utf-8') as f:
+                        user_cookies = json.load(f)
+                        context.add_cookies(user_cookies)
+                        sys.stderr.write(f"[INFO] Loaded {len(user_cookies)} cookies from {os.path.basename(chosen_cookie_file)} (Pool: {len(valid_pool)} accounts)\n")
+                except Exception as e:
+                    sys.stderr.write(f"[WARN] Failed to load cookies from {chosen_cookie_file}: {e}\n")
 
             page = context.new_page()
             
-            # Block slow tracking/analytics, keep media & scripts
+            # Safe route filter: Only abort heavy font files, DO NOT abort any telemetry/security SDKs
             def filter_requests(route):
                 req = route.request
                 if req.resource_type in ['font']:
-                    route.abort()
-                elif any(x in req.url for x in ['mon.zijieapi.com', 'sentry', 'bytedance.com/analytics']):
                     route.abort()
                 else:
                     route.continue_()
@@ -243,22 +254,27 @@ def download_with_playwright(video_id, output_dir):
             
             # Navigate to page
             try:
-                page.goto(target_url, wait_until='domcontentloaded', timeout=45000)
+                page.goto(target_url, wait_until='commit', timeout=35000)
             except Exception as e:
                 sys.stderr.write(f"[WARN] Navigation note: {e}\n")
                 
             if not video_play_url and not (video_stream_url and audio_stream_url):
-                page.wait_for_timeout(1000)
-                # Click center to ensure playback triggers if autoplay was withheld
-                try:
-                    page.mouse.click(960, 540)
-                except:
-                    pass
-                
-                # Wait up to 15s for either Engine 1 or Engine 2
-                for _ in range(30):
+                # Trigger realistic playback actions
+                for step in range(25):
                     if video_play_url or (video_stream_url and audio_stream_url):
                         break
+                    if step == 2:
+                        try: page.mouse.click(960, 540)
+                        except: pass
+                    elif step == 4:
+                        try: page.keyboard.press("Space")
+                        except: pass
+                    elif step == 7:
+                        try: page.mouse.wheel(0, 300)
+                        except: pass
+                    elif step == 10:
+                        try: page.keyboard.press("ArrowDown")
+                        except: pass
                     page.wait_for_timeout(500)
                 
             # Extract title from DOM if not found from API

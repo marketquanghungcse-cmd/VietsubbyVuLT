@@ -1180,7 +1180,11 @@ async function checkDouyinStatus() {
                 badge.style.background = 'rgba(16, 185, 129, 0.2)';
                 badge.style.color = '#10b981';
                 badge.style.border = '1px solid #10b981';
-                badge.innerText = '✅ Đã kết nối tài khoản';
+                const count = data.account_count || 1;
+                badge.innerText = count > 1 
+                    ? `✅ Đã kết nối ${count} tài khoản (Cookie Pool)` 
+                    : `✅ Đã kết nối 1 tài khoản`;
+                badge.title = `Cookie Pool có ${count} tài khoản Douyin đang luân phiên xoay tua`;
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
             } else {
                 badge.style.background = 'rgba(148, 163, 184, 0.1)';
@@ -1195,11 +1199,18 @@ async function checkDouyinStatus() {
 window.checkDouyinStatus = checkDouyinStatus;
 
 async function loginDouyin() {
-    if (!confirm("Hệ thống sẽ mở cửa sổ Google Chrome trên màn hình Windows.\n\nCác bước thực hiện:\n1. Khi cửa sổ Chrome hiện lên, nếu gặp thanh trượt ghép hình Captcha, hãy kéo thanh trượt để xác minh.\n2. Mở app Douyin trên điện thoại -> Quét mã QR đăng nhập (hoặc đăng nhập SĐT).\n3. Hệ thống sẽ TỰ ĐỘNG phát hiện khi đăng nhập thành công và lưu cookies!\n\nBấm OK để mở cửa sổ trình duyệt ngay!")) return;
+    const slotInput = prompt("HỆ THỐNG COOKIE POOL ĐA TÀI KHOẢN DOUYIN:\n\nNhập số thứ tự tài khoản bạn muốn đăng nhập:\n- Nhập 1: Đăng nhập/cập nhật Tài khoản chính (#1)\n- Nhập 2: Đăng nhập thêm Tài khoản phụ (#2) [Khuyên dùng]\n- Nhập 3: Đăng nhập thêm Tài khoản phụ (#3)\n- Nhập 4: Đăng nhập thêm Tài khoản phụ (#4)", "2");
+    if (slotInput === null) return;
+    const slot = parseInt(slotInput) || 1;
+
     try {
-        const res = await fetch('/api/douyin/login', { method: 'POST' });
+        const res = await fetch('/api/douyin/login', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot: slot })
+        });
         const data = await res.json();
-        alert(data.message || "Đã khởi động trình duyệt Chrome! Vui lòng quan sát màn hình máy tính.");
+        alert(data.message || `Đang mở trình duyệt đăng nhập Tài khoản #${slot} trên máy tính!`);
         
         let attempts = 0;
         const interval = setInterval(async () => {
@@ -1209,7 +1220,7 @@ async function loginDouyin() {
             if (sData.logged_in) {
                 clearInterval(interval);
                 checkDouyinStatus();
-                alert("🎉 ĐĂNG NHẬP THÀNH CÔNG!\nCookies tài khoản đã được lưu tự động. Video Douyin sẽ được tải ở độ phân giải gốc cao nhất.");
+                alert(`🎉 ĐĂNG NHẬP TÀI KHOẢN #${slot} THÀNH CÔNG!\nCookies đã được lưu vào Cookie Pool. Hệ thống sẽ tự động xoay tua tài khoản khi tải video.`);
             }
             if (attempts > 120) clearInterval(interval);
         }, 2500);
@@ -1251,6 +1262,8 @@ window.handleDouyinCookieFileUpload = handleDouyinCookieFileUpload;
 
 async function saveManualCookies() {
     const ta = document.getElementById('douyin-cookie-input');
+    const slotSelect = document.getElementById('douyin-cookie-slot');
+    const slot = slotSelect ? parseInt(slotSelect.value) || 1 : 1;
     const content = ta ? ta.value.trim() : '';
     if (!content) {
         alert("Vui lòng dán nội dung cookie hoặc tải file cookie trước!");
@@ -1260,11 +1273,11 @@ async function saveManualCookies() {
         const res = await fetch('/api/douyin/save_cookies', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cookies: content })
+            body: JSON.stringify({ cookies: content, slot: slot })
         });
         const data = await res.json();
         if (data.success) {
-            alert("✅ Đã lưu cookie Douyin thành công!");
+            alert(data.message || `✅ Đã lưu cookie cho Tài khoản #${slot} thành công!`);
             closeCookieModal();
             checkDouyinStatus();
         } else {

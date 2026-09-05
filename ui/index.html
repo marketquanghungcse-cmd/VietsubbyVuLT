@@ -769,6 +769,16 @@ button { cursor: pointer; font-weight: 600; }
             <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 12px; line-height: 1.5;">
                 Dán chuỗi Cookie từ trình duyệt của bạn (từ extension Cookie-Editor hoặc F12 Network Header Cookie), hoặc tải file <code>.txt</code> / <code>.json</code>:
             </p>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <label style="font-size: 12.5px; color: #cbd5e1; font-weight: 500;">Vị trí tài khoản (Slot):</label>
+                <select id="douyin-cookie-slot" style="background: #0f172a; color: #38bdf8; font-weight: 600; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;">
+                    <option value="1">Tài khoản #1 (Chính)</option>
+                    <option value="2" selected>Tài khoản #2 (Phụ 1 - Khuyên dùng)</option>
+                    <option value="3">Tài khoản #3 (Phụ 2)</option>
+                    <option value="4">Tài khoản #4 (Phụ 3)</option>
+                </select>
+                <span style="font-size: 11px; color: #94a3b8;">(Cookie Pool tự động xoay tua đa luồng)</span>
+            </div>
             <textarea id="douyin-cookie-input" rows="7" placeholder="Dán nội dung cookie vào đây... (Ví dụ: sessionid=xxxxxx; passport_auth_status=verified; hoặc mảng JSON [ { &quot;name&quot;: &quot;sessionid&quot;, ... } ])" style="width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 10px; font-family: monospace; font-size: 11.5px; resize: vertical;"></textarea>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; flex-wrap: wrap; gap: 8px;">
