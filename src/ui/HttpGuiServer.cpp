@@ -22,6 +22,7 @@
 #include <map>
 #include <set>
 #include <chrono>
+#include <sys/stat.h>
 
 namespace VideoDubber {
 
@@ -472,6 +473,145 @@ void HttpGuiServer::handleClient(uintptr_t client_socket) {
             return;
         }
 
+        // GET ALL DOUYIN ACCOUNTS FOR SETTINGS & MONITORING
+        if (path == "/api/douyin/accounts" && method == "GET") {
+            namespace fs = std::filesystem;
+            nlohmann::json accounts = nlohmann::json::array();
+            int total_active = 0;
+
+            for (int slot = 1; slot <= 5; ++slot) {
+                std::string suffix = (slot <= 1) ? "" : ("_" + std::to_string(slot));
+                std::string fname = "douyin_cookies" + suffix + ".json";
+                std::string fpath = "config/" + fname;
+
+                nlohmann::json acc;
+                acc["slot"] = slot;
+                acc["name"] = (slot == 1) ? "Tài khoản #1 (Chính)" : ("Tài khoản #" + std::to_string(slot) + " (Phụ " + std::to_string(slot - 1) + ")");
+                acc["file"] = fname;
+                acc["exists"] = false;
+                acc["cookie_count"] = 0;
+                acc["file_size"] = 0;
+                acc["updated_at"] = "";
+                acc["session_prefix"] = "";
+                acc["valid"] = false;
+
+                if (fs::exists(fpath)) {
+                    std::error_code ec;
+                    auto sz = fs::file_size(fpath, ec);
+                    if (sz > 50) {
+                        acc["exists"] = true;
+                        acc["file_size"] = sz;
+
+                        struct _stat64 fileInfo;
+                        if (_stat64(fpath.c_str(), &fileInfo) == 0) {
+                            time_t t = fileInfo.st_mtime;
+                            struct tm tm_buf;
+                            #ifdef _WIN32
+                            localtime_s(&tm_buf, &t);
+                            #else
+                            localtime_r(&t, &tm_buf);
+                            #endif
+                            char time_str[64];
+                            strftime(time_str, sizeof(time_str), "%d/%m/%Y %H:%M", &tm_buf);
+                            acc["updated_at"] = std::string(time_str);
+                        }
+
+                        try {
+                            std::ifstream f(fpath);
+                            nlohmann::json cj;
+                            f >> cj;
+                            if (cj.is_array()) {
+                                acc["cookie_count"] = cj.size();
+                                for (const auto& c : cj) {
+                                    if (c.contains("name") && c["name"] == "sessionid") {
+                                        std::string val = c.value("value", "");
+                                        if (val.length() > 6) {
+                                            acc["session_prefix"] = val.substr(0, 6) + "******";
+                                            acc["valid"] = true;
+                                        }
+                                        break;
+                                    }
+                                }
+                                if (!acc["valid"].get<bool>() && cj.size() > 5) {
+                                    acc["valid"] = true;
+                                }
+                            }
+                        } catch (...) {}
+
+                        total_active++;
+                    }
+                }
+
+                accounts.push_back(acc);
+            }
+
+            nlohmann::json res;
+            res["accounts"] = accounts;
+            res["total_active"] = total_active;
+            res["pool_status"] = (total_active > 1) 
+                ? "🟢 Cookie Pool: " + std::to_string(total_active) + " tài khoản (Đang xoay tua)"
+                : (total_active == 1 ? "🟡 1 tài khoản (Chưa xoay tua)" : "🔴 Chưa kết nối tài khoản nào");
+            sendResponse(200, "application/json", res.dump());
+            return;
+        }
+
+        if (path == "/api/douyin/delete_account" && method == "POST") {
+            int slot = 1;
+            try {
+                auto j = nlohmann::json::parse(body);
+                slot = j.value("slot", 1);
+            } catch (...) {}
+
+            std::string suffix = (slot <= 1) ? "" : ("_" + std::to_string(slot));
+            std::filesystem::remove("config/douyin_cookies" + suffix + ".json");
+            std::filesystem::remove("config/douyin_cookies" + suffix + ".txt");
+            std::filesystem::remove("temp/douyin_cookies" + suffix + ".json");
+            std::filesystem::remove("temp/douyin_cookies" + suffix + ".txt");
+
+            sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đã xóa Tài khoản #" + std::to_string(slot) + "\"}");
+            return;
+        }
+
+        if (path == "/api/douyin/test_account" && method == "POST") {
+            int slot = 1;
+            try {
+                auto j = nlohmann::json::parse(body);
+                slot = j.value("slot", 1);
+            } catch (...) {}
+
+            std::string suffix = (slot <= 1) ? "" : ("_" + std::to_string(slot));
+            std::string fpath = "config/douyin_cookies" + suffix + ".json";
+            if (!std::filesystem::exists(fpath)) {
+                sendResponse(200, "application/json", "{\"success\": false, \"message\": \"Tài khoản #" + std::to_string(slot) + " chưa có file cookie!\"}");
+                return;
+            }
+
+            try {
+                std::ifstream f(fpath);
+                nlohmann::json cj;
+                f >> cj;
+                if (cj.is_array() && !cj.empty()) {
+                    bool has_auth = false;
+                    for (const auto& c : cj) {
+                        std::string name = c.value("name", "");
+                        if (name == "sessionid" || name == "sessionid_ss" || name == "uid_tt" || name == "passport_auth_status") {
+                            has_auth = true;
+                            break;
+                        }
+                    }
+                    if (has_auth) {
+                        sendResponse(200, "application/json", "{\"success\": true, \"message\": \"✅ Tài khoản #" + std::to_string(slot) + " HOẠT ĐỘNG TỐT! (Đã xác thực session/token hợp lệ)\"}");
+                    } else {
+                        sendResponse(200, "application/json", "{\"success\": false, \"message\": \"⚠️ Cookie hợp lệ nhưng thiếu sessionid. Bạn có thể cần đăng nhập lại.\"}");
+                    }
+                    return;
+                }
+            } catch (...) {}
+
+            sendResponse(200, "application/json", "{\"success\": false, \"message\": \"File cookie không hợp lệ!\"}");
+            return;
+        }
+
         if (path == "/api/douyin/login" && method == "POST") {
             int slot = 1;
             try {
@@ -479,10 +619,10 @@ void HttpGuiServer::handleClient(uintptr_t client_socket) {
                 slot = j.value("slot", 1);
             } catch (...) {}
             std::thread([slot]() {
-                std::string cmd = "python scripts/douyin_login.py " + std::to_string(slot);
-                ProcessRunner::executeVisible(cmd);
+                std::string cmd = "cmd.exe /c start \"Dang Nhap Douyin - Tai Khoan #" + std::to_string(slot) + "\" python scripts/douyin_login.py " + std::to_string(slot);
+                system(cmd.c_str());
             }).detach();
-            sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đang mở cửa sổ đăng nhập Douyin (Tài khoản #" + std::to_string(slot) + ") trên màn hình máy tính\"}");
+            sendResponse(200, "application/json", "{\"success\": true, \"message\": \"Đang mở cửa sổ đăng nhập Douyin (Tài khoản #" + std::to_string(slot) + ") trên màn hình máy tính!\"}");
             return;
         }
 
