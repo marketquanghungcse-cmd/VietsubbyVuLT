@@ -1421,11 +1421,58 @@ async function saveManualCookies() {
     const ta = document.getElementById('douyin-cookie-input');
     const slotSelect = document.getElementById('douyin-cookie-slot');
     const slot = slotSelect ? parseInt(slotSelect.value) || 1 : 1;
-    const content = ta ? ta.value.trim() : '';
+    let content = ta ? ta.value.trim() : '';
     if (!content) {
         alert("Vui lòng dán nội dung cookie hoặc tải file cookie trước!");
         return;
     }
+
+    // Smart Cookie Auto-Converter (Hỗ trợ Cookie-Editor JSON, Netscape TXT, Header String)
+    if (!content.startsWith('[') && !content.startsWith('{')) {
+        const cookiesArr = [];
+        // Case 1: Netscape HTTP Cookie format (tab separated)
+        if (content.includes('\t')) {
+            const lines = content.split('\n');
+            for (const line of lines) {
+                const l = line.trim();
+                if (!l || l.startsWith('#')) continue;
+                const parts = l.split('\t');
+                if (parts.length >= 7) {
+                    cookiesArr.push({
+                        domain: parts[0],
+                        path: parts[2],
+                        secure: parts[3] === 'TRUE',
+                        expires: parseInt(parts[4]) || -1,
+                        name: parts[5],
+                        value: parts[6]
+                    });
+                }
+            }
+        } 
+        // Case 2: Header String format (key=val; key2=val2)
+        else if (content.includes('=')) {
+            const pairs = content.split(';');
+            for (const pair of pairs) {
+                const idx = pair.indexOf('=');
+                if (idx !== -1) {
+                    const k = pair.substring(0, idx).trim();
+                    const v = pair.substring(idx + 1).trim();
+                    if (k) {
+                        cookiesArr.push({
+                            domain: '.douyin.com',
+                            path: '/',
+                            name: k,
+                            value: v
+                        });
+                    }
+                }
+            }
+        }
+        if (cookiesArr.length > 0) {
+            content = JSON.stringify(cookiesArr, null, 2);
+        }
+    }
+
     try {
         const res = await fetch('/api/douyin/save_cookies', {
             method: 'POST',
